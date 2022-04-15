@@ -1,11 +1,11 @@
 from setuptools import setup
 
-setup(name='example',
+setup(name='fitness_mcmc',
       version='1.0',
-      description='An example package for Harvard PHYS201',
-      url='http://github.com/phys201/example',
-      author='ralex0',
-      author_email='ralex0@users.noreply.github.com',
+      description='A genotypic data anaylsis package to infer genotype fitnesses',
+      url='http://github.com/phys201/fitness_mcmc',
+      author='Eliot, Pavel, Lidiya',
+      author_email='',
       license='GPLv3',
-      packages=['example'],
-      install_requires=['numpy'])
+      packages=['fitness_mcmc'],
+      install_requires=['pymc3'])
