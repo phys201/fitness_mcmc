@@ -1,9 +1,19 @@
 import numpy as np
 import pymc3 as pm
+import matplotlib.pyplot as plt
 
 class Fitness_Model:
 
     def __init__(self, data, times = -1):
+        """
+        Initializes the Fitness_Model class
+
+        Params:
+            data [array-like]: lineage counts over time. Shape:
+                [# lineages, # times]
+            times [array-like]: times, in generations, where lineages were
+                sampled
+        """
         if times == -1:
             self.times = np.array([7, 14, 28, 42, 49]).reshape([1, -1])
         else:
@@ -22,14 +32,42 @@ class Fitness_Model:
                                     observed = 100 * 1000 * self.data)
 
     def find_MAP(self):
+        """
+        Finds the MAP estimate for lineage fitnesses and starting frequencies
+        """
         self.map_estimate = pm.find_MAP(model = self.model)
+
+    def plot_MAP_estimate(self, type="log_y"):
+        """
+        Plots lineage trajectories from the MAP estimate
+
+        Parameters:
+            type [str]: either "log_y" or "lin", sets the y axis scale
+        """
+        f_pred = self.map_estimate["f0"] * np.exp(
+                            self.map_estimate["s"] * self.times)
+        f_pred /= np.sum(f_pred, axis = 0)
+
+        fig, axs = plt.subplots(1,2)
+        if type == "log_y":
+            axs[0].semilogy(self.times.T, self.data.T)
+            axs[1].semilogy(self.times.T, f_pred.T)
+        elif type == "lin":
+            axs[0].plot(self.times.T, self.data.T)
+            axs[1].plot(self.times.T, f_pred.T)
+        axs[0].set_xlabel("Generations")
+        axs[1].set_xlabel("Generations")
+        axs[0].set_ylabel("Lineage frequency")
+        axs[0].set_title("Data")
+        axs[1].set_title("Reconstructed")
+        plt.show()
 
 def normalize_func(x):
     """
-    Normalizes frequencies to sum to 1
+    Normalizes lineage frequencies to sum to 1
 
     Parameters:
-        x: frequency vector to be normalized
+        x [array_like]: frequency vector to be normalized
     """
     return x / np.sum(x, axis = 0)
 
@@ -38,10 +76,14 @@ def create_trajectories(f0, s, times, normalize = True):
     Simulates lineage trajectores given initial frequency and fitnesses
 
     Parameters:
-        f0: initial lineage frequencies
-        s: lineage fitnesses
-        num_gens: number of generations to simulate
-        dt: discretized time step for forward integration
+        f0 [array-like]: initial lineage frequencies
+        s [array-like]: lineage fitnesses
+        times [array-like]: times, in generations, to sample lineage frequencies
+        normalize [bool]: if True, normalizes lineage frequencies at each
+            sampling time
+    Returns:
+        f_traj [numpy array]: array of lineage frequencies sampled at times
+            given by "times"
     """
     f0 = f0.reshape([len(f0), -1])
     s = s.reshape([len(s), -1])
@@ -58,25 +100,12 @@ def sample_lineages(f, num_samples):
     Returns lineage counts Poisson sampled from their true frequencies
 
     Parameters:
-        f: true lineage frequencies
-        num_samples: total number of samples to draw, should be order
+        f [array_like]: true lineage frequencies
+        num_samples [int]: total number of samples to draw, should be order
             100 * num_lineages
     Returns:
-        n_sampled: number of samples measured from each lineage
+        n_sampled [numpy array]: number of samples measured from each lineage
     """
     n_expected = f * num_samples
     n_sampled = np.random.poisson(n_expected)
     return n_sampled
-
-def extract_at_time_pts(trajectory, tps = [7, 14, 28, 42, 49],
-                        dt = 0.1, num_gens = -1):
-    if num_gens == -1:
-        num_gens = tps[-1]
-    N = len(trajectory[0, :])
-    time_array = np.arange(0, num_gens + .00001, dt)
-    samples = np.zeros([5, N])
-
-    for i, tp in enumerate(tps):
-        j = np.where(time_array == tp)[0][0]
-        samples[i, :] = trajectory[j, :]
-    return samples
