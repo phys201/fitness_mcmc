@@ -1,10 +1,11 @@
 import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
+import arviz as az
 
 class Fitness_Model:
 
-    def __init__(self, data, times = -1):
+    def __init__(self, data, times = -1, s_ref = 0):
         """
         Initializes the Fitness_Model class
 
@@ -22,14 +23,32 @@ class Fitness_Model:
         self.data = np.array(data).reshape([-1, self.num_times])
         self.N = len(data[:, 0])
         self.model = pm.Model()
+        self.s_ref_val = 0
         with self.model:
-            self.s = pm.Flat("s", shape = (self.N, 1))
-            self.f0 = pm.HalfFlat("f0", shape = (self.N, 1))
+            self.s_ref = pm.math.constant(s_ref, ndim = 2)
+            self.f0_ref = pm.math.constant(1, ndim = 2)
+            self.s = pm.Flat("s", shape = (self.N - 1, 1))
+            self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
+
+            self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times) /
+                          (self.f0_ref * pm.math.exp(self.s_ref * times)
+                          + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
+                          axis = 0)))
             self.f = (self.f0 * pm.math.exp(self.s * self.times) /
-                      pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                      axis = 0) )
-            self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f,
+                      (self.f0_ref * pm.math.exp(self.s_ref * times)
+                      + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
+                      axis = 0)))
+            self.f_tot = pm.math.concatenate((self.f_ref, self.f))
+            self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f_tot,
                                     observed = 100 * 1000 * self.data)
+
+    def mcmc_sample(self):
+        with self.model:
+            self.trace = pm.sample(5000, return_inferencedata=True)
+
+    def plot_mcmc_posterior(self):
+        with self.model:
+            az.plot_posterior(self.trace)
 
     def find_MAP(self):
         """
@@ -44,8 +63,10 @@ class Fitness_Model:
         Parameters:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
-        f_pred = self.map_estimate["f0"] * np.exp(
+        f_pred = np.zeros_like(self.data)
+        f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
                             self.map_estimate["s"] * self.times)
+        f_pred[0] = np.exp(self.s_ref_val * self.times)
         f_pred /= np.sum(f_pred, axis = 0)
 
         fig, axs = plt.subplots(1,2)
