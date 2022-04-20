@@ -1,6 +1,4 @@
 from unittest import TestCase
-#import fitness_mcmc
-#import fitness_mcmc.data_io as di
 from fitness_mcmc.data_io import _get_file_path, load_data
 
 class TestIo(TestCase):
