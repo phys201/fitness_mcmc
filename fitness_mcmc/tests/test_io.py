@@ -25,7 +25,7 @@ class TestIo(TestCase):
         simulated_data = load_data(simulated_file_path)
         
         new_dataframe_simulated=simulated_data[0]
-        my_value_simulated=new_dataframe_2['5'][0]
+        my_value_simulated=new_dataframe_simulated['5'][0]
         
         message_simulated = "First value and second value are not equal !"
        
