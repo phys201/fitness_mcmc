@@ -14,13 +14,13 @@ class TestIo(TestCase):
        
         self.assertEqual(my_value, 1682, message)
         
-    def test_simulated_data(self):
-        simulated_file_path = _get_file_path('simulated_data.txt')
-        simulated_data = load_data(simulated_file_path)
+   # def test_simulated_data(self):
+        #simulated_file_path = _get_file_path('simulated_data.txt')
+        #simulated_data = load_data(simulated_file_path)
         
-        new_dataframe_2=simulated_data[0]
-        my_value_2=new_dataframe_2['5'][0]
+       # new_dataframe_2=simulated_data[0]
+       # my_value_2=new_dataframe_2['5'][0]
         
-        message_2 = "First value and second value are not equal !"
+        #message_2 = "First value and second value are not equal !"
        
-        self.assertEqual(my_value_2, 90, message_2)
+        #self.assertEqual(my_value_2, 90, message_2)
