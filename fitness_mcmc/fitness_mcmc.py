@@ -43,10 +43,17 @@ class Fitness_Model:
                                     observed = 100 * 1000 * self.data)
 
     def mcmc_sample(self):
+        """
+        Markov-chain Monte Carlo sample the posterior distribution of the
+        pymc3 model
+        """
         with self.model:
             self.trace = pm.sample(5000, return_inferencedata=True)
 
     def plot_mcmc_posterior(self):
+        """
+        Plots the posterior for several MCMC sampled parameters
+        """
         with self.model:
             az.plot_posterior(self.trace)
 
