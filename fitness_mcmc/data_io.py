@@ -1,16 +1,16 @@
 import pandas as pd
 import numpy as np
-from pathlib import Path
+import os
 from fitness_mcmc import create_trajectories, sample_lineages
 
-def _get_file_path(filename):
-
-    # Path.cwd() returns the location of the source file currently in use (so
-    # in this case io.py). We can use it as base path to construct
-    # other paths from that should end up correct on other machines or
-    # when the package is installed
-    current_directory = Path.cwd()
-    data_path = Path(current_directory, filename)
+def _get_file_path(filename, data_dir = 'experimental_data'):
+    
+    #the default is data_directory is experimental_data
+    start = os.path.abspath(__file__)
+    start_dir = os.path.dirname(start)
+    data_dir = os.path.join(start_dir, data_dir)
+    data_path = os.path.join(start_dir, data_dir, filename)
+    
     return data_path
 
 
@@ -39,28 +39,3 @@ def load_data(filename):
     ordered_frequencies = frequencies.T[idx,:]
 
     return data, time, ordered_frequencies
-
-def write_simulated_datafile(filename, N = 40, times = -1, s_range = 0.1,
-                             depth = 100):
-    """
-    Creates a textfile of simulated trajectories formated like a real datafile
-
-    Params:
-        filename [str]: name of the output file
-        N [int]: population size
-        times [array_like]: times, in generations, to sample lineages.
-        s_range [float]: range of fitness values
-        depth [int_or_float]: Simulated read depth, affects noise
-    """
-    f0_vals = np.random.random(N)
-    s_vals = np.random.random(N) * s_range
-    if times == -1:
-        times = np.array([5, 10, 25, 40, 45])
-    else:
-        times = np.array(times)
-
-    trajectory = create_trajectories(f0_vals, s_vals, times)
-    sampled = pd.DataFrame(sample_lineages(trajectory, depth * N),
-                           columns = times)
-
-    sampled.to_csv(filename, sep="\t", index_label = "BC")
