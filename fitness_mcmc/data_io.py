@@ -15,7 +15,7 @@ def _get_file_path(filename):
 
 
 def load_data(filename):
-    data_file = _get_file_path(filename)
+    
     """
     Takes data file path and outputs time generations and counts as numpy arrays
 
@@ -28,7 +28,7 @@ def load_data(filename):
         counts [array_like]: counts of genotypes
         frequencies [array_like]: normalized counts of genotypes
     """
-
+    data_file = _get_file_path(filename)
     data = pd.read_csv(data_file, delimiter = '\t')
     time = [int(i) for i in data.columns[1:]]
     counts = data.loc[:,data.columns[1:]].to_numpy()
