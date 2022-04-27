@@ -3,9 +3,8 @@ import numpy as np
 import os
 from fitness_mcmc import create_trajectories, sample_lineages
 
-def _get_file_path(filename, data_dir = 'experimental_data'):
+def _get_file_path(filename, data_dir):
     
-    #the default is data_directory is experimental_data
     start = os.path.abspath(__file__)
     start_dir = os.path.dirname(start)
     data_dir = os.path.join(start_dir, data_dir)
@@ -14,7 +13,9 @@ def _get_file_path(filename, data_dir = 'experimental_data'):
     return data_path
 
 
-def load_data(filename):
+def load_data(filename, data_dir = 'experimental_data'):
+    
+    #the default is data_directory is experimental_data
     
     """
     Takes data file path and outputs time generations and counts as numpy arrays
@@ -28,7 +29,7 @@ def load_data(filename):
         counts [array_like]: counts of genotypes
         frequencies [array_like]: normalized counts of genotypes
     """
-    data_file = _get_file_path(filename)
+    data_file = _get_file_path(filename, data_dir)
     data = pd.read_csv(data_file, delimiter = '\t')
     time = [int(i) for i in data.columns[1:]]
     counts = data.loc[:,data.columns[1:]].to_numpy()
