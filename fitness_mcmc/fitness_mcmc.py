@@ -56,6 +56,12 @@ class Fitness_Model:
         """
         with self.model:
             az.plot_posterior(self.trace)
+    
+    def plot_mcmc_trace(self):
+        
+        with self.model: 
+            az.plot_trace(self.trace)
+        
 
     def find_MAP(self):
         """
