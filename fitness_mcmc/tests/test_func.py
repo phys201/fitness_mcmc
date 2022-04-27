@@ -1,6 +1,6 @@
 from unittest import TestCase
 import fitness_mcmc as fm
-import data_io as io
+import fitness_mcmc.data_io as io
 import numpy as np
 import pymc3 as pm 
 
