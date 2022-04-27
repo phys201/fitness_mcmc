@@ -1,11 +1,11 @@
 from unittest import TestCase
 import pandas as pd
-from fitness_mcmc.data_io import _get_file_path, load_data
+import fitness_mcmc.data_io as di 
 
 #returns a tuple of data, generations and ordered_frequencies
-data = load_data('filtered_counts_ypd_temp_30.txt')
+data = di.load_data('filtered_counts_ypd_temp_30.txt')
 
-class TestIo(TestCase):
+class TestModel(TestCase):
             
     def test_is_dataframe(self):
         """
@@ -19,7 +19,7 @@ class TestIo(TestCase):
         """
         gets the path of the file and loads real data, and finds first value of column 5 to compare it with the actual value
         """
-        data = load_data('filtered_counts_ypd_temp_30.txt')
+        data = di.load_data('filtered_counts_ypd_temp_30.txt')
         
         new_dataframe=data[0]
         my_value=new_dataframe['5'][0]
@@ -32,7 +32,7 @@ class TestIo(TestCase):
         """
         gets the path of the file and loads the simulated data, and finds first value of column 5 to compare it with the actual value
         """
-        simulated_data = load_data('simulated_data.txt', data_dir = 'simulated_data')
+        simulated_data = di.load_data('simulated_data.txt', data_dir = 'simulated_data')
         
         new_dataframe_2=simulated_data[0]
         my_value_2=new_dataframe_2['5'][0]

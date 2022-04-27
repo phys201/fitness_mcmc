@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 import os
+
+import sys 
+sys.path.append('..')
+
 from fitness_mcmc import create_trajectories, sample_lineages
 
 def _get_file_path(filename, data_dir):
