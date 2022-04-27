@@ -9,7 +9,7 @@ import numpy as np
 
 class Test(TestCase):
         
-    def test_is_normalize(self):
+    def test_is_sample_lineages(self):
         """
         tests whether the package "fitness_mcmc" loads correctly
         """
