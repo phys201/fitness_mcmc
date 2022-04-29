@@ -79,19 +79,19 @@ class Fitness_Model:
         Parameters:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
-        f_pred = np.zeros_like(self.data)
-        f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
+        self.f_pred = np.zeros_like(self.data)
+        self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
                             self.map_estimate["s"] * self.times)
-        f_pred[0] = np.exp(self.s_ref_val * self.times)
-        f_pred /= np.sum(f_pred, axis = 0)
+        self.f_pred[0] = np.exp(self.s_ref_val * self.times)
+        self.f_pred /= np.sum(self.f_pred, axis = 0)
 
         fig, axs = plt.subplots(1,2)
         if type == "log_y":
             axs[0].semilogy(self.times.T, self.data.T)
-            axs[1].semilogy(self.times.T, f_pred.T)
+            axs[1].semilogy(self.times.T, self.f_pred.T)
         elif type == "lin":
             axs[0].plot(self.times.T, self.data.T)
-            axs[1].plot(self.times.T, f_pred.T)
+            axs[1].plot(self.times.T, self.f_pred.T)
         axs[0].set_xlabel("Generations")
         axs[1].set_xlabel("Generations")
         axs[0].set_ylabel("Lineage frequency")

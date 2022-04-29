@@ -5,7 +5,7 @@ import fitness_mcmc.data_io as di
 #returns a tuple of data, generations and ordered_frequencies
 data = di.load_data('filtered_counts_ypd_temp_30.txt')
 
-class TestModel(TestCase):
+class TestIo(TestCase):
             
     def test_is_dataframe(self):
         """
