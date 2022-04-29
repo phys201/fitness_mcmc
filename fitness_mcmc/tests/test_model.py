@@ -6,7 +6,7 @@ import pymc3 as pm
 
 data, time, ordered_frequencies= di.load_data('filtered_counts_ypd_temp_30.txt')
 
-class TestIo(TestCase):
+class TestModel(TestCase):
     
     fitness_model = fm.Fitness_Model(ordered_frequencies,time) 
 

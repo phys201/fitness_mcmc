@@ -8,7 +8,17 @@ sys.path.append('..')
 from fitness_mcmc import create_trajectories, sample_lineages
 
 def _get_file_path(filename, data_dir):
+    """
+    Takes the file name and returns the absolute data file path given that
+    the data file is found in data_dir 
     
+    Params: 
+        file_name[str]: file name of data file 
+        data_dir[str]: the directory where the file is located 
+        
+        Returns: 
+        data_path[str]: the absolute path to file_name
+    """
     start = os.path.abspath(__file__)
     start_dir = os.path.dirname(start)
     data_dir = os.path.join(start_dir, data_dir)

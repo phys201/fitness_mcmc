@@ -58,6 +58,9 @@ class Fitness_Model:
             az.plot_posterior(self.trace)
     
     def plot_mcmc_trace(self):
+        """
+        Plots the trace of a sampled MCMC posterior distribution 
+        """
         
         with self.model: 
             az.plot_trace(self.trace)
