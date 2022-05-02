@@ -25,9 +25,17 @@ class Fitness_Model:
         self.model = pm.Model()
         self.s_ref_val = 0
         with self.model:
+            
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
             self.f0_ref = pm.math.constant(1, ndim = 2)
-            self.s = pm.Flat("s", shape = (self.N - 1, 1))
+            """
+            trying to add in hyperparameters
+            """ 
+            self.mu = pm.Flat("mu")
+            self.sigma = pm.HalfFlat("sigma")
+            
+            self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1)) 
+            #self.s = pm.Flat("s", shape = (self.N - 1, 1))
             self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
 
             self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times) /
@@ -79,6 +87,7 @@ class Fitness_Model:
         Parameters:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
+        
         self.f_pred = np.zeros_like(self.data)
         self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
                             self.map_estimate["s"] * self.times)
