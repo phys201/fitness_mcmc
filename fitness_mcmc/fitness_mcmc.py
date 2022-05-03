@@ -55,7 +55,9 @@ class Fitness_Model:
         pymc3 model
         """
         with self.model:
-            self.trace = pm.sample(samples, tune = tune, return_inferencedata=True)
+            self.trace = pm.sample(samples,
+                                   tune = tune,
+                                   return_inferencedata = True)
 
     def plot_mcmc_posterior(self):
         """
