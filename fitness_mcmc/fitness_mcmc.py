@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import arviz as az
 
 class Fitness_Model:
-
     def __init__(self, data, times = -1, s_ref = 0):
         """
         Initializes the Fitness_Model class
@@ -25,16 +24,16 @@ class Fitness_Model:
         self.model = pm.Model()
         self.s_ref_val = 0
         with self.model:
-            
+
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
             self.f0_ref = pm.math.constant(1, ndim = 2)
             """
             trying to add in hyperparameters
-            """ 
+            """
             self.mu = pm.Flat("mu")
             self.sigma = pm.HalfFlat("sigma")
-            
-            self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1)) 
+
+            self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1))
             #self.s = pm.Flat("s", shape = (self.N - 1, 1))
             self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
 
@@ -64,15 +63,15 @@ class Fitness_Model:
         """
         with self.model:
             az.plot_posterior(self.trace)
-    
+
     def plot_mcmc_trace(self):
         """
-        Plots the trace of a sampled MCMC posterior distribution 
+        Plots the trace of a sampled MCMC posterior distribution
         """
-        
-        with self.model: 
+
+        with self.model:
             az.plot_trace(self.trace)
-        
+
 
     def find_MAP(self):
         """
@@ -87,7 +86,7 @@ class Fitness_Model:
         Parameters:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
-        
+
         self.f_pred = np.zeros_like(self.data)
         self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
                             self.map_estimate["s"] * self.times)
@@ -131,9 +130,9 @@ def create_trajectories(f0, s, times, normalize = True):
         f_traj [numpy array]: array of lineage frequencies sampled at times
             given by "times"
     """
-    f0 = f0.reshape([len(f0), -1])
-    s = s.reshape([len(s), -1])
-    times = times.reshape([-1, len(times)])
+    f0 = np.array(f0).reshape([len(f0), -1])
+    s = np.array(s).reshape([len(s), -1])
+    times = np.array(times).reshape([-1, len(times)])
     f_traj = f0 * np.exp(s * times)
 
     if normalize:
