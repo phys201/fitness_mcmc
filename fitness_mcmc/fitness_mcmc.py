@@ -23,8 +23,8 @@ class Fitness_Model:
         self.N = len(data[:, 0])
         self.model = pm.Model()
         self.s_ref_val = 0
-        with self.model:
 
+        with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
             self.f0_ref = pm.math.constant(1, ndim = 2)
             """
@@ -34,7 +34,6 @@ class Fitness_Model:
             self.sigma = pm.HalfFlat("sigma")
 
             self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1))
-            #self.s = pm.Flat("s", shape = (self.N - 1, 1))
             self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
 
             self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times) /
@@ -49,13 +48,13 @@ class Fitness_Model:
             self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f_tot,
                                     observed = 100 * 1000 * self.data)
 
-    def mcmc_sample(self, samples, tune = 4000):
+    def mcmc_sample(self, draws, tune = 4000):
         """
         Markov-chain Monte Carlo sample the posterior distribution of the
         pymc3 model
         """
         with self.model:
-            self.trace = pm.sample(samples,
+            self.trace = pm.sample(draws,
                                    tune = tune,
                                    return_inferencedata = True)
 
@@ -70,7 +69,6 @@ class Fitness_Model:
         """
         Plots the trace of a sampled MCMC posterior distribution
         """
-
         with self.model:
             az.plot_trace(self.trace)
 
@@ -87,7 +85,6 @@ class Fitness_Model:
         Parameters:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
-
         self.f_pred = np.zeros_like(self.data)
         self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
                             self.map_estimate["s"] * self.times)
@@ -135,10 +132,8 @@ def create_trajectories(f0, s, times, normalize = True):
     s = np.array(s).reshape([len(s), -1])
     times = np.array(times).reshape([-1, len(times)])
     f_traj = f0 * np.exp(s * times)
-
     if normalize:
         f_traj = normalize_func(f_traj)
-
     return f_traj
 
 def sample_lineages(f, num_samples):
