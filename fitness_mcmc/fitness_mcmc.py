@@ -49,13 +49,13 @@ class Fitness_Model:
             self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f_tot,
                                     observed = 100 * 1000 * self.data)
 
-    def mcmc_sample(self):
+    def mcmc_sample(self, samples, tune = 4000):
         """
         Markov-chain Monte Carlo sample the posterior distribution of the
         pymc3 model
         """
         with self.model:
-            self.trace = pm.sample(5000, return_inferencedata=True)
+            self.trace = pm.sample(samples, tune = tune, return_inferencedata=True)
 
     def plot_mcmc_posterior(self):
         """
@@ -71,7 +71,6 @@ class Fitness_Model:
 
         with self.model:
             az.plot_trace(self.trace)
-
 
     def find_MAP(self):
         """
