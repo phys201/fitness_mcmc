@@ -22,31 +22,36 @@ class Fitness_Model:
         self.data = np.array(data).reshape([-1, self.num_times])
         self.N = len(data[:, 0])
         self.model = pm.Model()
-        self.s_ref_val = 0
+        self.s_ref_val = s_ref
 
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
             self.f0_ref = pm.math.constant(1, ndim = 2)
-            """
-            trying to add in hyperparameters
-            """
+
             self.mu = pm.Flat("mu")
             self.sigma = pm.HalfFlat("sigma")
 
-            self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1))
+            self.s = pm.Normal("s", self.mu, self.sigma,
+                shape = (self.N - 1, 1)
+            )
             self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
 
-            self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times) /
-                          (self.f0_ref * pm.math.exp(self.s_ref * times)
-                          + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                          axis = 0)))
-            self.f = (self.f0 * pm.math.exp(self.s * self.times) /
-                      (self.f0_ref * pm.math.exp(self.s_ref * times)
-                      + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                      axis = 0)))
+            self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times)
+                / (self.f0_ref * pm.math.exp(self.s_ref * times)
+                + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
+                              axis = 0))
+            )
+            self.f = (self.f0 * pm.math.exp(self.s * self.times)
+                / (self.f0_ref * pm.math.exp(self.s_ref * times)
+                + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
+                axis = 0))
+            )
             self.f_tot = pm.math.concatenate((self.f_ref, self.f))
-            self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f_tot,
-                                    observed = 100 * 1000 * self.data)
+
+            self.f_obs = pm.Poisson("f_obs",
+                mu = self.f_tot * np.sum(self.data, axis = 0) / 10,
+                observed = self.data / 10
+            )
 
     def mcmc_sample(self, draws, tune = 4000):
         """
@@ -56,7 +61,7 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = True)
+                                   return_inferencedata = False)
 
     def plot_mcmc_posterior(self):
         """
@@ -86,17 +91,22 @@ class Fitness_Model:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
         self.f_pred = np.zeros_like(self.data)
-        self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
-                            self.map_estimate["s"] * self.times)
+        self.f_pred[1:, :] = (self.map_estimate["f0"]
+            * np.exp(self.map_estimate["s"] * self.times)
+        )
         self.f_pred[0] = np.exp(self.s_ref_val * self.times)
         self.f_pred /= np.sum(self.f_pred, axis = 0)
 
         fig, axs = plt.subplots(1,2)
         if type == "log_y":
-            axs[0].semilogy(self.times.T, self.data.T)
+            axs[0].semilogy(self.times.T,
+                            (self.data / np.sum(self.data, axis = 0)).T
+            )
             axs[1].semilogy(self.times.T, self.f_pred.T)
         elif type == "lin":
-            axs[0].plot(self.times.T, self.data.T)
+            axs[0].plot(self.times.T,
+                        (self.data / np.sum(self.data, axis = 0)).T
+            )
             axs[1].plot(self.times.T, self.f_pred.T)
         axs[0].set_xlabel("Generations")
         axs[1].set_xlabel("Generations")

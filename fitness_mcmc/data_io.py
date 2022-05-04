@@ -50,14 +50,12 @@ def load_data(filename, data_dir = "experimental_data", load_metadata = False):
         metadata = pd.read_csv(metadata_file, delimiter = "\t").to_numpy()[:,1:]
         s_vals = metadata[:, 0]
         f0_vals = metadata[:, 1]
-    for i in range(len(counts[0,:])):
-        frequencies[i] = counts[:,i]/np.sum(counts[:,i])
-    idx = np.flipud(np.argsort(np.sum(frequencies.T, axis = 1)))
-    ordered_frequencies = frequencies.T[idx,:]
+    idx = np.flipud(np.argsort(np.sum(counts, axis = 1)))
+    ordered_counts = counts[idx, :].astype("float")
 
     if load_metadata:
         s_vals = s_vals[idx]
         f0_vals = f0_vals[idx]
-        return data, time, ordered_frequencies, s_vals, f0_vals
+        return data, time, ordered_counts, s_vals, f0_vals
     else:
-        return data, time, ordered_frequencies
+        return data, time, ordered_counts
