@@ -76,7 +76,7 @@ class Fitness_Model:
         """
         Finds the MAP estimate for lineage fitnesses and starting frequencies
         """
-        self.map_estimate = pm.find_MAP(model = self.model)
+        self.map_estimate = pm.find_MAP(model = self.model, return_raw=True)
 
     def plot_MAP_estimate(self, type="log_y"):
         """
