@@ -26,7 +26,6 @@ class Fitness_Model:
 
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
-            self.f0_ref = pm.math.constant(1, ndim = 2)
 
             self.mu = pm.Flat("mu")
             self.sigma = pm.HalfFlat("sigma")
@@ -34,24 +33,20 @@ class Fitness_Model:
             self.s = pm.Normal("s", self.mu, self.sigma,
                 shape = (self.N - 1, 1)
             )
-            self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
+            self.s_tot = pm.math.concatenate((self.s_ref, self.s))
+            self.f0 = pm.Dirichlet("f0", a = np.ones(self.N)).reshape((self.N, 1))
 
-            self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times)
-                / (self.f0_ref * pm.math.exp(self.s_ref * times)
-                + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                              axis = 0))
+            self.f_tot = (self.f0 * pm.math.exp(self.s_tot * self.times)
+                / pm.math.sum(self.f0 * pm.math.exp(self.s_tot * self.times),
+                axis = 0)
             )
-            self.f = (self.f0 * pm.math.exp(self.s * self.times)
-                / (self.f0_ref * pm.math.exp(self.s_ref * times)
-                + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                axis = 0))
-            )
-            self.f_tot = pm.math.concatenate((self.f_ref, self.f))
 
-            self.f_obs = pm.Poisson("f_obs",
-                mu = self.f_tot * np.sum(self.data, axis = 0) / 10,
-                observed = self.data / 10
+            self.n_obs = pm.Multinomial("n_obs",
+                np.sum(self.data, axis = 0).reshape((-1, 1)),
+                p =self.f_tot.T, observed = self.data.T
             )
+
+            self.defaults = {"f0": np.array([0.1])}
 
     def mcmc_sample(self, draws, tune = 4000):
         """
@@ -91,10 +86,11 @@ class Fitness_Model:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
         self.f_pred = np.zeros_like(self.data)
-        self.f_pred[1:, :] = (self.map_estimate["f0"]
+        self.f_pred[1:, :] = (self.map_estimate["f0"][1:, None]
             * np.exp(self.map_estimate["s"] * self.times)
         )
-        self.f_pred[0] = np.exp(self.s_ref_val * self.times)
+        self.f_pred[0] = (self.map_estimate["f0"][0]
+            * np.exp(self.s_ref_val * self.times) )
         self.f_pred /= np.sum(self.f_pred, axis = 0)
 
         fig, axs = plt.subplots(1,2)
