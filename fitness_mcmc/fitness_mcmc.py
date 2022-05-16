@@ -48,7 +48,7 @@ class Fitness_Model:
 
             self.defaults = {"f0": np.array([0.1])}
 
-    def mcmc_sample(self, draws, tune = 4000):
+    def mcmc_sample(self, draws, tune = 4000, **kwargs):
         """
         Markov-chain Monte Carlo sample the posterior distribution of the
         pymc3 model
@@ -56,7 +56,8 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = False)
+                                   return_inferencedata = False,
+                                   **kwargs)
 
     def plot_mcmc_posterior(self):
         """
@@ -72,11 +73,11 @@ class Fitness_Model:
         with self.model:
             az.plot_trace(self.trace)
 
-    def find_MAP(self):
+    def find_MAP(self, **kwargs):
         """
         Finds the MAP estimate for lineage fitnesses and starting frequencies
         """
-        self.map_estimate = pm.find_MAP(model = self.model)
+        self.map_estimate = pm.find_MAP(model = self.model, **kwargs)
 
     def plot_MAP_estimate(self, type="log_y"):
         """
