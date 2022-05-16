@@ -46,7 +46,7 @@ class Fitness_Model:
                 p =self.f_tot.T, observed = self.data.T
             )
 
-            self.defaults = {"f0": np.array([0.1])}
+            self.defaults = {"f0": 0.1}
 
     def mcmc_sample(self, draws, tune = 4000, **kwargs):
         """
