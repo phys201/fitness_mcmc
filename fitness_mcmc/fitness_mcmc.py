@@ -4,17 +4,25 @@ import matplotlib.pyplot as plt
 import arviz as az
 
 class Fitness_Model:
-    def __init__(self, data, times = -1, s_ref = 0):
+    def __init__(self, data, times = None, s_ref = 0, prior = "gauss",
+                 s_prior = None):
         """
         Initializes the Fitness_Model class
 
         Params:
             data [array-like]: lineage counts over time. Shape:
-                [# lineages, # times]
+                (# lineages, # times)
             times [array-like]: times, in generations, where lineages were
                 sampled
+            s_ref [float or int]: fitness value for the reference lineage;
+                defaults to 0
+            prior [str]: Prior to choose for fitness values. Options are
+                "gauss" [default], "flat", or "values"
+            s_prior [array_like]: mean and standard deviation for priors on
+                fitness, eg. from another experiment. Should have shape
+                (# lineages - 1, 2)
         """
-        if times == -1:
+        if not times:
             self.times = np.array([7, 14, 28, 42, 49]).reshape([1, -1])
         else:
             self.times = np.array(times).reshape([1, -1])
@@ -23,16 +31,26 @@ class Fitness_Model:
         self.N = len(data[:, 0])
         self.model = pm.Model()
         self.s_ref_val = s_ref
+        self.prior = prior
+        if prior = "values":
+            self.s_prior = s_prior
 
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
 
-            self.mu = pm.Uniform("mu", -0.5, 0.2)
-            self.sigma = pm.Uniform("sigma", 0.01, 0.3)
+            if self.prior == "gauss":
+                self.mu = pm.Uniform("mu", -0.5, 0.2)
+                self.sigma = pm.Uniform("sigma", 0.01, 0.3)
+                self.s = pm.Normal("s", self.mu, self.sigma,
+                    shape = (self.N - 1, 1)
+                )
+            elif self.priors == "flat":
+                self.s = pm.Flat("s", shape = (self.N - 1, 1))
+            elif self.priors == "values":
+                self.s = pm.Normal("s", self.s_prior[:,0], self.s_prior[:,1],
+                    shape = self.N - 1, 1
+                )
 
-            self.s = pm.Normal("s", self.mu, self.sigma,
-                shape = (self.N - 1, 1)
-            )
             self.s_tot = pm.math.concatenate((self.s_ref, self.s))
             self.f0 = pm.Dirichlet("f0", a = np.ones(self.N)).reshape((self.N, 1))
 
