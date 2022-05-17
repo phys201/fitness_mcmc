@@ -54,7 +54,7 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = True,
+                                   return_inferencedata = False,
                                    init = "adapt_diag",
                                    **kwargs)
 
