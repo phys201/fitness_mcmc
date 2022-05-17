@@ -78,7 +78,7 @@ class Fitness_Model:
             if not save_path:
                 az.plot_trace(self.trace)
             else:
-                axes = az.trace(self.trace)
+                axes = az.plot_trace(self.trace)
                 fig = axes.ravel()[0].figure
                 fig.savefig(save_path + "trace.png")
 
