@@ -34,7 +34,7 @@ class Fitness_Model:
                 shape = (self.N - 1, 1)
             )
             self.s_tot = pm.math.concatenate((self.s_ref, self.s))
-            self.f0 = pm.Dirichlet("f0", a = 1.1 * np.ones(self.N)).reshape((self.N, 1))
+            self.f0 = pm.Dirichlet("f0", a = np.ones(self.N)).reshape((self.N, 1))
 
             self.f_tot = (self.f0 * pm.math.exp(self.s_tot * self.times)
                 / pm.math.sum(self.f0 * pm.math.exp(self.s_tot * self.times),
@@ -57,6 +57,7 @@ class Fitness_Model:
             self.trace = pm.sample(draws,
                                    tune = tune,
                                    return_inferencedata = False,
+                                   init = "adapt_diag",
                                    **kwargs)
 
     def plot_mcmc_posterior(self):
