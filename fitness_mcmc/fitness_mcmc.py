@@ -27,8 +27,8 @@ class Fitness_Model:
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
 
-            self.mu = pm.Uniform("mu", -0.2, -0.1)
-            self.sigma = pm.Uniform("sigma", 0.01, 0.15)
+            self.mu = pm.Uniform("mu", -0.5, 0.2)
+            self.sigma = pm.Uniform("sigma", 0.01, 0.3)
 
             self.s = pm.Normal("s", self.mu, self.sigma,
                 shape = (self.N - 1, 1)
@@ -46,8 +46,6 @@ class Fitness_Model:
                 p =self.f_tot.T, observed = self.data.T
             )
 
-            self.defaults = {"mu": 0.1}
-
     def mcmc_sample(self, draws, tune = 4000, **kwargs):
         """
         Markov-chain Monte Carlo sample the posterior distribution of the
@@ -56,23 +54,33 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = False,
+                                   return_inferencedata = True,
                                    init = "adapt_diag",
                                    **kwargs)
 
-    def plot_mcmc_posterior(self):
+    def plot_mcmc_posterior(self, save_path = None):
         """
         Plots the posterior for several MCMC sampled parameters
         """
         with self.model:
-            az.plot_posterior(self.trace)
+            if not save_path:
+                az.plot_posterior(self.trace)
+            else:
+                axes = az.plot_posterior(self.trace)
+                fig = axes.ravel()[0].figure
+                fig.savefig(save_path + "posterior.png")
 
-    def plot_mcmc_trace(self):
+    def plot_mcmc_trace(self, save_path = None):
         """
         Plots the trace of a sampled MCMC posterior distribution
         """
         with self.model:
-            az.plot_trace(self.trace)
+            if not save_path:
+                az.plot_trace(self.trace)
+            else:
+                axes = az.trace(self.trace)
+                fig = axes.ravel()[0].figure
+                fig.savefig(save_path + "trace.png")
 
     def find_MAP(self, **kwargs):
         """
