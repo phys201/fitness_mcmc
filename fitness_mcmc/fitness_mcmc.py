@@ -27,14 +27,14 @@ class Fitness_Model:
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
 
-            self.mu = pm.Flat("mu")
-            self.sigma = pm.HalfFlat("sigma")
+            self.mu = pm.Uniform("mu", -0.2, -0.1)
+            self.sigma = pm.Uniform("sigma", 0.01, 0.15)
 
             self.s = pm.Normal("s", self.mu, self.sigma,
                 shape = (self.N - 1, 1)
             )
             self.s_tot = pm.math.concatenate((self.s_ref, self.s))
-            self.f0 = pm.Dirichlet("f0", a = np.ones(self.N)).reshape((self.N, 1))
+            self.f0 = pm.Dirichlet("f0", a = 1.1 * np.ones(self.N)).reshape((self.N, 1))
 
             self.f_tot = (self.f0 * pm.math.exp(self.s_tot * self.times)
                 / pm.math.sum(self.f0 * pm.math.exp(self.s_tot * self.times),
@@ -46,7 +46,7 @@ class Fitness_Model:
                 p =self.f_tot.T, observed = self.data.T
             )
 
-            self.defaults = {"f0": 0.1}
+            self.defaults = {"mu": 0.1}
 
     def mcmc_sample(self, draws, tune = 4000, **kwargs):
         """
