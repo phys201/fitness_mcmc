@@ -32,7 +32,7 @@ class Fitness_Model:
         self.model = pm.Model()
         self.s_ref_val = s_ref
         self.prior = prior
-        if prior = "values":
+        if prior == "values":
             self.s_prior = s_prior
 
         with self.model:
@@ -48,7 +48,7 @@ class Fitness_Model:
                 self.s = pm.Flat("s", shape = (self.N - 1, 1))
             elif self.priors == "values":
                 self.s = pm.Normal("s", self.s_prior[:,0], self.s_prior[:,1],
-                    shape = self.N - 1, 1
+                    shape = (self.N - 1, 1)
                 )
 
             self.s_tot = pm.math.concatenate((self.s_ref, self.s))
@@ -72,7 +72,7 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = False,
+                                   return_inferencedata = True,
                                    init = "adapt_diag",
                                    **kwargs)
 
