@@ -4,17 +4,25 @@ import matplotlib.pyplot as plt
 import arviz as az
 
 class Fitness_Model:
-    def __init__(self, data, times = -1, s_ref = 0):
+    def __init__(self, data, times = None, s_ref = 0, prior = "gauss",
+                 s_prior = None):
         """
         Initializes the Fitness_Model class
 
         Params:
             data [array-like]: lineage counts over time. Shape:
-                [# lineages, # times]
+                (# lineages, # times)
             times [array-like]: times, in generations, where lineages were
                 sampled
+            s_ref [float or int]: fitness value for the reference lineage;
+                defaults to 0
+            prior [str]: Prior to choose for fitness values. Options are
+                "gauss" [default], "flat", or "values"
+            s_prior [array_like]: mean and standard deviation for priors on
+                fitness, eg. from another experiment. Should have shape
+                (# lineages - 1, 2)
         """
-        if times == -1:
+        if not times:
             self.times = np.array([7, 14, 28, 42, 49]).reshape([1, -1])
         else:
             self.times = np.array(times).reshape([1, -1])
@@ -22,33 +30,41 @@ class Fitness_Model:
         self.data = np.array(data).reshape([-1, self.num_times])
         self.N = len(data[:, 0])
         self.model = pm.Model()
-        self.s_ref_val = 0
+        self.s_ref_val = s_ref
+        self.prior = prior
+        if prior == "values":
+            self.s_prior = s_prior
 
         with self.model:
             self.s_ref = pm.math.constant(s_ref, ndim = 2)
-            self.f0_ref = pm.math.constant(1, ndim = 2)
-            """
-            trying to add in hyperparameters
-            """
-            self.mu = pm.Flat("mu")
-            self.sigma = pm.HalfFlat("sigma")
 
-            self.s = pm.Normal("s", self.mu, self.sigma, shape = (self.N - 1, 1))
-            self.f0 = pm.HalfFlat("f0", shape = (self.N - 1, 1))
+            if self.prior == "gauss":
+                self.mu = pm.Uniform("mu", -0.5, 0.2)
+                self.sigma = pm.Uniform("sigma", 0.01, 0.3)
+                self.s = pm.Normal("s", self.mu, self.sigma,
+                    shape = (self.N - 1, 1)
+                )
+            elif self.priors == "flat":
+                self.s = pm.Flat("s", shape = (self.N - 1, 1))
+            elif self.priors == "values":
+                self.s = pm.Normal("s", self.s_prior[:,0], self.s_prior[:,1],
+                    shape = (self.N - 1, 1)
+                )
 
-            self.f_ref = (self.f0_ref * pm.math.exp(self.s_ref_val * self.times) /
-                          (self.f0_ref * pm.math.exp(self.s_ref * times)
-                          + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                          axis = 0)))
-            self.f = (self.f0 * pm.math.exp(self.s * self.times) /
-                      (self.f0_ref * pm.math.exp(self.s_ref * times)
-                      + pm.math.sum(self.f0 * pm.math.exp(self.s * self.times),
-                      axis = 0)))
-            self.f_tot = pm.math.concatenate((self.f_ref, self.f))
-            self.f_obs = pm.Poisson("f_obs", mu = 100 * 1000 * self.f_tot,
-                                    observed = 100 * 1000 * self.data)
+            self.s_tot = pm.math.concatenate((self.s_ref, self.s))
+            self.f0 = pm.Dirichlet("f0", a = np.ones(self.N)).reshape((self.N, 1))
 
-    def mcmc_sample(self, draws, tune = 4000):
+            self.f_tot = (self.f0 * pm.math.exp(self.s_tot * self.times)
+                / pm.math.sum(self.f0 * pm.math.exp(self.s_tot * self.times),
+                axis = 0)
+            )
+
+            self.n_obs = pm.Multinomial("n_obs",
+                np.sum(self.data, axis = 0).reshape((-1, 1)),
+                p =self.f_tot.T, observed = self.data.T
+            )
+
+    def mcmc_sample(self, draws, tune = 4000, **kwargs):
         """
         Markov-chain Monte Carlo sample the posterior distribution of the
         pymc3 model
@@ -56,27 +72,39 @@ class Fitness_Model:
         with self.model:
             self.trace = pm.sample(draws,
                                    tune = tune,
-                                   return_inferencedata = True)
+                                   return_inferencedata = True,
+                                   init = "adapt_diag",
+                                   **kwargs)
 
-    def plot_mcmc_posterior(self):
+    def plot_mcmc_posterior(self, save_path = None):
         """
         Plots the posterior for several MCMC sampled parameters
         """
         with self.model:
-            az.plot_posterior(self.trace)
+            if not save_path:
+                az.plot_posterior(self.trace)
+            else:
+                axes = az.plot_posterior(self.trace)
+                fig = axes.ravel()[0].figure
+                fig.savefig(save_path + "posterior.png")
 
-    def plot_mcmc_trace(self):
+    def plot_mcmc_trace(self, save_path = None):
         """
         Plots the trace of a sampled MCMC posterior distribution
         """
         with self.model:
-            az.plot_trace(self.trace)
+            if not save_path:
+                az.plot_trace(self.trace)
+            else:
+                axes = az.plot_trace(self.trace)
+                fig = axes.ravel()[0].figure
+                fig.savefig(save_path + "trace.png")
 
-    def find_MAP(self):
+    def find_MAP(self, **kwargs):
         """
         Finds the MAP estimate for lineage fitnesses and starting frequencies
         """
-        self.map_estimate = pm.find_MAP(model = self.model, return_raw=True)
+        self.map_estimate = pm.find_MAP(model = self.model, **kwargs)
 
     def plot_MAP_estimate(self, type="log_y"):
         """
@@ -86,17 +114,23 @@ class Fitness_Model:
             type [str]: either "log_y" or "lin", sets the y axis scale
         """
         self.f_pred = np.zeros_like(self.data)
-        self.f_pred[1:, :] =  self.map_estimate["f0"] * np.exp(
-                            self.map_estimate["s"] * self.times)
-        self.f_pred[0] = np.exp(self.s_ref_val * self.times)
+        self.f_pred[1:, :] = (self.map_estimate["f0"][1:, None]
+            * np.exp(self.map_estimate["s"] * self.times)
+        )
+        self.f_pred[0] = (self.map_estimate["f0"][0]
+            * np.exp(self.s_ref_val * self.times) )
         self.f_pred /= np.sum(self.f_pred, axis = 0)
 
         fig, axs = plt.subplots(1,2)
         if type == "log_y":
-            axs[0].semilogy(self.times.T, self.data.T)
+            axs[0].semilogy(self.times.T,
+                            (self.data / np.sum(self.data, axis = 0)).T
+            )
             axs[1].semilogy(self.times.T, self.f_pred.T)
         elif type == "lin":
-            axs[0].plot(self.times.T, self.data.T)
+            axs[0].plot(self.times.T,
+                        (self.data / np.sum(self.data, axis = 0)).T
+            )
             axs[1].plot(self.times.T, self.f_pred.T)
         axs[0].set_xlabel("Generations")
         axs[1].set_xlabel("Generations")
